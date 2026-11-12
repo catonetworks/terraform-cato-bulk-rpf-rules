@@ -45,9 +45,18 @@ locals {
   rule_bodies = {
     for name, rw in local.rules_by_name : name => merge(
       {
-        name        = rw.rule.name
-        enabled     = try(rw.rule.enabled, true)
-        external_ip = can(rw.rule.externalIp.name) ? { name = rw.rule.externalIp.name } : { id = rw.rule.externalIp.id }
+        name    = rw.rule.name
+        enabled = try(rw.rule.enabled, true)
+        # external_ip: resolved to THIS tenant's allocation ID via
+        # allocated_ip_id_map when available (display names embed the
+        # tenant-specific Cato-assigned ip, and AllocatedIp by-NAME refs are
+        # unreliable in the API -- by-ID always resolves). Unmapped refs pass
+        # through unchanged (source-tenant plans).
+        external_ip = (
+          can(rw.rule.externalIp.name) && contains(keys(var.allocated_ip_id_map), try(rw.rule.externalIp.name, "")) ?
+          { id = var.allocated_ip_id_map[rw.rule.externalIp.name] } :
+          can(rw.rule.externalIp.name) ? { name = rw.rule.externalIp.name } : { id = rw.rule.externalIp.id }
+        )
         external_port_range = {
           from = tostring(rw.rule.externalPortRange.from)
           to   = tostring(rw.rule.externalPortRange.to)
@@ -86,6 +95,19 @@ locals {
         )
       } : {}
     )
+  }
+}
+
+# Safety guard: fail plan early if the decoded JSON has 0 rules, unless explicitly
+# allowed via allow_empty_policy. Protects against a truncated/wrong-tenant export
+# silently destroying every live rule. Deliberately has no count/for_each so its
+# precondition always evaluates.
+resource "terraform_data" "guard_empty_policy" {
+  lifecycle {
+    precondition {
+      condition     = var.allow_empty_policy || length(local.rules_by_name) > 0
+      error_message = "Policy JSON contains 0 rules. If intentional (greenfield/teardown), set allow_empty_policy = true. A truncated or wrong-tenant export would otherwise destroy the entire live policy."
+    }
   }
 }
 
