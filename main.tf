@@ -113,7 +113,7 @@ resource "terraform_data" "guard_empty_policy" {
 
 # Optional account-level policy toggle (Remote Port Forwarding ships disabled on new
 # tenants - without enabling it, published rules have no effect).
-resource "cato_remote_port_fwd_policy" "policy" {
+resource "cato_remote_port_forward_policy" "policy" {
   count   = var.policy_enabled == null ? 0 : 1
   enabled = var.policy_enabled
 }
@@ -140,6 +140,10 @@ resource "cato_remote_port_fwd_rule" "rules" {
   }
 
   rule = local.rule_bodies[each.key]
+
+  lifecycle {
+    ignore_changes = [at] # create-only positioning; ordering owned by the move resource
+  }
 }
 
 # Ordering + republish on changes.

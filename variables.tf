@@ -4,7 +4,7 @@ variable "rpf_rules_json_file_path" {
 }
 
 variable "policy_enabled" {
-  description = "Manage the account-level Remote Port Forwarding policy toggle. null leaves the toggle unmanaged; true/false manages it via cato_remote_port_fwd_policy."
+  description = "Manage the account-level Remote Port Forwarding policy toggle. null leaves the toggle unmanaged; true/false manages it via cato_remote_port_forward_policy."
   type        = bool
   default     = null
 }

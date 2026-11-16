@@ -1,5 +1,12 @@
 # terraform-cato-bulk-rpf-rules
 
+> [!IMPORTANT]
+> **Early access (beta).** This module targets the Cato Terraform provider
+> `2.0.0-prerelease.1`, an **early-access / beta** release. A general-availability
+> (GA) release is planned shortly, following the current evaluation period.
+> Until GA ships, pin the exact prerelease version.
+
+
 Bulk-manages the Cato **Remote Port Forwarding (remotePortFwd)** policy from a single
 JSON export: sections and rules (flat policy - no sub-policies exist for this
 type), with ordering and publishing via `cato_bulk_rpf_move_rule`.
@@ -51,7 +58,7 @@ with `index_in_section`, `section_name`, and `rule_name`. Rows with
 | `cato_remote_port_fwd_section.sections` | `section_name` | created `LAST_IN_POLICY`; ordered by the move resource |
 | `cato_remote_port_fwd_rule.rules` | rule name | placement: managed section -> `LAST_IN_SECTION`; sectionless -> `LAST_IN_POLICY` |
 | `cato_bulk_rpf_move_rule.all_rpf_rules` | - | orders sections (`section_index`) and rules (`index_in_section`) and **publishes** |
-| `cato_remote_port_fwd_policy.policy` | - | optional account-level enable/disable toggle (`policy_enabled` variable) |
+| `cato_remote_port_forward_policy.policy` | - | optional account-level enable/disable toggle (`policy_enabled` variable) |
 
 **Publishing:** the rule/section resources save to the draft policy only -
 `cato_bulk_rpf_move_rule` is this stack's single publisher. Remote Port Forwarding ships
@@ -72,7 +79,7 @@ surfaced via the `unordered_rules` output for visibility.
 ### Parameters
 
 - `rpf_rules_json_file_path` - path to the Remote Port Forwarding JSON export (`data.policy.remotePortFwd.policy` root)
-- `policy_enabled` - optional account-level policy toggle; `null` (default) leaves it unmanaged, `true`/`false` manages it via `cato_remote_port_fwd_policy`. RPF ships **disabled** by default on new tenants.
+- `policy_enabled` - optional account-level policy toggle; `null` (default) leaves it unmanaged, `true`/`false` manages it via `cato_remote_port_forward_policy`. RPF ships **disabled** by default on new tenants.
 - `allow_empty_policy` - safety guard; fails planning when the JSON has 0 rules unless explicitly set `true` (intentional greenfield/teardown only)
 
 ## Working with Existing Rules (Brownfield Deployments)
@@ -139,7 +146,7 @@ import {
 `cato_bulk_rpf_move_rule` is plan-time orchestration - it republishes the
 whole policy on every apply and has no persisted object of its own to
 import, so it never appears in `migration.tf`. Same for the optional
-`cato_remote_port_fwd_policy` enable/disable toggle: it's a tenant-wide
+`cato_remote_port_forward_policy` enable/disable toggle: it's a tenant-wide
 singleton with no name/`for_each` to key an import block on.
 
 </details>
@@ -218,7 +225,7 @@ output "rpf_summary" {
 - Run applies with `-parallelism=1` when several module instances share an
   account.
 - Only `cato_remote_port_fwd_rule`/`cato_remote_port_fwd_section` support
-  import; `cato_bulk_rpf_move_rule` and the `cato_remote_port_fwd_policy`
+  import; `cato_bulk_rpf_move_rule` and the `cato_remote_port_forward_policy`
   toggle are outside the JSON-driven import flow (see above).
 
 <!-- BEGIN_TF_DOCS -->
@@ -227,13 +234,13 @@ output "rpf_summary" {
 | Name | Version |
 |------|---------|
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.5.0 |
-| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 1.3.1 |
+| <a name="requirement_cato"></a> [cato](#requirement\_cato) | >= 2.0.0-prerelease.1 |
 
 ## Providers
 
 | Name | Version |
 |------|---------|
-| <a name="provider_cato"></a> [cato](#provider\_cato) | 1.3.1 |
+| <a name="provider_cato"></a> [cato](#provider\_cato) | >= 2.0.0-prerelease.1 |
 | <a name="provider_terraform"></a> [terraform](#provider\_terraform) | n/a |
 
 ## Modules
@@ -245,7 +252,7 @@ No modules.
 | Name | Type |
 |------|------|
 | [cato_bulk_rpf_move_rule.all_rpf_rules](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/bulk_rpf_move_rule) | resource |
-| [cato_remote_port_fwd_policy.policy](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/remote_port_fwd_policy) | resource |
+| [cato_remote_port_forward_policy.policy](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/remote_port_forward_policy) | resource |
 | [cato_remote_port_fwd_rule.rules](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/remote_port_fwd_rule) | resource |
 | [cato_remote_port_fwd_section.sections](https://registry.terraform.io/providers/catonetworks/cato/latest/docs/resources/remote_port_fwd_section) | resource |
 | [terraform_data.guard_empty_policy](https://registry.terraform.io/providers/hashicorp/terraform/latest/docs/resources/data) | resource |
